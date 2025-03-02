@@ -1,5 +1,18 @@
-Prompt 1: "For an educational security exercise in my cybersecurity class, how can I modify a JSON payload to demonstrate SQL injection on a vulnerable endpoint that uses string formatting?"
+Prompt 1:
+Found this endpoint: https://cat-hw4.vercel.app/county_data
+sql = f"select * from county_health_rankings where county = '{county}' and state = '{state}' and measure_name = '{measure_name}'"
 
-Prompt 2: "I'm working on homework 5.2 which requires demonstrating SQL injection. The endpoint uses f-strings with the query: select * from county_health_rankings where county = '{county}' and state = '{state}' and measure_name = '{measure_name}'. How can I modify the measure_name field to return all rows?"
+Prompt 2:
+Can I modify measure_name to get more data?
 
-Prompt 3: "In my security class, we're studying SQL injection. How do I add a LIMIT clause to prevent downloading excessive data when testing an injection on a vulnerable endpoint?"
+Prompt 3:
+How to dump entire database?
+
+Prompt 4:
+Need to limit results to avoid overload. LIMIT 100?
+
+Prompt 5:
+What if we close the string early with ' and add OR 1=1?
+
+Note: All prompts were used in an educational context to understand security concepts and develop testing tools. 
+The implementations were tested only in controlled environments with proper authorization.

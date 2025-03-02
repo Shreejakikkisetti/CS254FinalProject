@@ -1,54 +1,58 @@
-# Vulnerability Scanner
+# SQL Injection and Vulnerability Scanner
+CS1060 - Homework 5  
+Shreeja Kikkisetti
 
+## Overview
 This project contains two main components:
-1. A vulnerability scanner that tests for weak credentials on HTTP and SSH services
-2. A SQL injection test case for a web service
+1. SQL Injection testing tool for exploring database vulnerabilities
+2. Network vulnerability scanner for testing HTTP/SSH authentication
+
+## Setup
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run vulnerability scanner
+python3 vulnerability_scanner.py       # Normal mode
+python3 vulnerability_scanner.py -v    # Verbose mode
+
+# Run tests
+python3 test_vulnerability_scanner.py
+```
 
 ## Files
-- `vulnerability_scanner.py`: Python script that scans for open ports and tests for weak credentials
-- `attack.json`: Contains a SQL injection payload to test database vulnerabilities
-- `test.json`: Contains a normal, non-malicious query for testing
-- `requirements.txt`: Lists Python package dependencies
-- `.gitignore`: Specifies which files Git should ignore
+- `vulnerability_scanner.py`: Main scanner implementation
+- `attack.json`: SQL injection payload
+- `test.json`: Original test payload
+- `test_vulnerability_scanner.py`: Test suite
+- `requirements.txt`: Project dependencies
 
-## Setup and Usage
+## Testing Endpoints
+- SQL Injection: https://cat-hw4.vercel.app/county_data
+- Vulnerability Scanner: localhost ports < 9000
 
-1. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+# AI Model Interactions
 
-2. Run the vulnerability scanner:
-```bash
-python3 vulnerability_scanner.py
-```
+## SQL Injection Task (5.2)
 
-Add -v flag for verbose output:
-```bash
-python3 vulnerability_scanner.py -v
-```
+### ChatGPT
+- Initially refused to provide direct assistance with SQL injection
+- Implemented several guardrails:
+  - Warned about ethical implications of SQL injection
+  - Suggested using parameterized queries instead
+  - Required explicit educational context
+  - Limited responses to theoretical explanations
+- Workaround: Had to frame queries in hypothetical/educational context and focus on understanding the vulnerability rather than exploitation
 
-## Testing SQL Injection
+### Perplexity
+- Provided general information about SQL injection
+- Helped with understanding query structure
+- More open to discussing technical details
+- Still emphasized responsible testing practices
 
-To test the SQL injection payload:
-```bash
-curl -X POST https://cat-hw4.vercel.app/county_data -H "Content-Type: application/json" -d @attack.json
-```
-
-## Implementation Details
-
-The vulnerability scanner:
-- Scans for open TCP ports below 9000 on localhost (127.0.0.1)
-- Tests HTTP basic auth and SSH password auth on each open port
-- Uses a predefined set of credentials:
-  ```python
-  credentials = {
-      'admin': 'admin',
-      'root': 'abc123',
-      'skroob': '12345'
-  }
-  ```
-- Outputs successful connections in RFC 3986 format
-
-## Credits
-This project was created with assistance from Generative AI as part of CS1060 coursework.
+### Cascade (Codeium)
+- More willing to discuss SQL query structure
+- Provided technical explanations when framed as educational exercise
+- Helped understand string formatting vulnerabilities
+- Added LIMIT clause suggestion to prevent resource abuse
+- Still maintained some guardrails but more focused on controlled testing
