@@ -1,0 +1,11 @@
+# TLA+ specific files
+*.toolbox/
+*TTrace*.tla
+*TTrace*.out
+states*.dot
+*.old
+*.log
+*.aux
+*.pdf
+*.tex
+*.dot
