@@ -1,0 +1,19 @@
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.synctex.gz
+
+# C build files
+*.o
+*.exe
+elevator
+
+# TLA+ files
+*.toolbox/
+*_SnapShot_*/
+states/
+
+# OS specific
+.DS_Store
+*~

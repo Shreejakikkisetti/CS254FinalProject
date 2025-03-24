@@ -1,0 +1,85 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[margin=1in]{geometry}
+
+\title{Elevator Control System: Formal Specification and Implementation}
+\author{CS254 Final Project}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Problem Description}
+We present a formal specification and implementation of a simple elevator control system. The system models an elevator that can move between floors while maintaining essential safety and liveness properties.
+
+\section{State Space}
+The elevator's state is represented by two key variables:
+\begin{itemize}
+    \item \textbf{position}: Represents both floor locations and between-floor positions
+    \begin{itemize}
+        \item Odd numbers ($2f-1$) indicate the elevator is at floor $f$
+        \item Even numbers indicate the elevator is between floors
+    \end{itemize}
+    \item \textbf{movement}: Direction of travel (Ascending or Descending)
+\end{itemize}
+
+\section{System Diagram}
+\begin{verbatim}
+Floor 5 -------|   |------- pos = 9
+              |   |        pos = 8
+Floor 4 -------|   |------- pos = 7
+              |   |        pos = 6
+Floor 3 -------|   |------- pos = 5
+              |   |        pos = 4
+Floor 2 -------|[E]|------- pos = 3
+              |   |        pos = 2
+Floor 1 -------|   |------- pos = 1
+\end{verbatim}
+\begin{center}
+E = Elevator position\\[1em]
+Odd numbers (1,3,5,7,9): At floor\\[0.5em]
+Even numbers (2,4,6,8): Between floors
+\end{center}
+
+\section{Actions}
+The system supports four basic actions:
+\begin{enumerate}
+    \item \textbf{StartAscending}: Begin moving up from a floor
+    \item \textbf{ContinueAscending}: Continue moving up between floors
+    \item \textbf{StartDescending}: Begin moving down from a floor
+    \item \textbf{ContinueDescending}: Continue moving down between floors
+\end{enumerate}
+
+\section{Properties}
+The system maintains three critical properties:
+
+\subsection{Safety Property}
+\textbf{ValidBounds}: The elevator must stay within valid position bounds
+\[ position \in [1..2N-1] \]
+where $N$ is the number of floors.
+
+\subsection{Liveness Properties}
+\begin{enumerate}
+    \item \textbf{ReachesAllFloors}: The elevator can eventually reach any floor
+    \[ \forall f \in 1..N : \Box\Diamond AtFloor(f) \]
+    
+    \item \textbf{NoStuck}: The elevator cannot get permanently stuck between floors
+    \[ \neg\Diamond\Box InTransit \]
+\end{enumerate}
+
+\section{Fairness Conditions}
+To ensure progress, the system implements both weak and strong fairness:
+\begin{itemize}
+    \item \textbf{Weak Fairness} for:
+    \begin{itemize}
+        \item Completing in-progress movements (ContinueAscending, ContinueDescending)
+        \item Moving from terminal floors
+    \end{itemize}
+    \item \textbf{Strong Fairness} for:
+    \begin{itemize}
+        \item Moving from intermediate floors in either direction
+    \end{itemize}
+\end{itemize}
+
+\end{document}
