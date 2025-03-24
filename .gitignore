@@ -28,3 +28,5 @@ Thumbs.db
 
 # Downloaded files
 nmap-7.94.dmg
+
+mutex/tla/states/

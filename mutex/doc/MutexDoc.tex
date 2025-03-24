@@ -1,0 +1,83 @@
+\documentclass{article}
+\usepackage{listings}
+\usepackage[margin=1in]{geometry}
+
+\title{TLA+ Mutex Lock Specification}
+\author{CS254 Final Project}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Overview}
+This document explains the TLA+ specification of a mutex lock system with FIFO queuing. The specification ensures both safety (mutual exclusion) and liveness (no starvation) properties.
+
+\section{State Space}
+The specification uses three state variables:
+\begin{itemize}
+    \item pc: Program counter for each process (noncritical, trying, critical)
+    \item lock: Lock state (0 for free, or process ID that holds it)
+    \item queue: Sequence of processes waiting for the lock
+\end{itemize}
+
+\section{Actions}
+\subsection{Try}
+When a process wants to enter the critical section:
+\begin{itemize}
+    \item Changes state from noncritical to trying
+    \item Appends itself to end of queue
+\end{itemize}
+
+\subsection{Enter}
+A process can enter the critical section when:
+\begin{itemize}
+    \item It is in trying state
+    \item The lock is free (lock = 0)
+    \item It is at the head of the queue
+\end{itemize}
+
+\subsection{Exit}
+When a process is done:
+\begin{itemize}
+    \item Releases the lock
+    \item Returns to noncritical state
+\end{itemize}
+
+\section{Properties}
+\subsection{Safety}
+Mutual Exclusion: No two processes can be in the critical section simultaneously.
+\begin{verbatim}
+MutualExclusion ==
+    \A p1, p2 \in Procs :
+        (p1 # p2) => ~(pc[p1] = "critical" /\ pc[p2] = "critical")
+\end{verbatim}
+
+\subsection{Liveness}
+No Starvation: If a process is in the queue, it eventually enters the critical section.
+\begin{verbatim}
+NoStarvation ==
+    \A p \in Procs : InQueue(p) ~> (pc[p] = "critical")
+\end{verbatim}
+
+\section{FIFO Queue Implementation}
+The specification uses a sequence to implement strict FIFO ordering:
+\begin{itemize}
+    \item New processes are added to end: Append(queue, p)
+    \item Only head of queue can enter: Head(queue) = p
+    \item Process removed from front when entering: Tail(queue)
+\end{itemize}
+
+This ensures processes enter the critical section in exactly the order they requested access.
+
+\section{Fairness}
+The specification includes weak fairness conditions for all actions:
+\begin{verbatim}
+Fairness == \A p \in Procs :
+    /\ WF_vars(Try(p))
+    /\ WF_vars(Enter(p))
+    /\ WF_vars(Exit(p))
+\end{verbatim}
+
+This ensures that if an action is continuously enabled, it will eventually be taken.
+
+\end{document}
