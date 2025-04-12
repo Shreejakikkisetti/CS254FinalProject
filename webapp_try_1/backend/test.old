@@ -1,0 +1,11 @@
+---- MODULE Test ----
+EXTENDS Integers, TLC
+
+(*
+--algorithm test
+variables x = 0;
+begin
+  a1: x := 1;
+end algorithm;
+*)
+====

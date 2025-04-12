@@ -8,6 +8,7 @@ import CodeEditor from './components/CodeEditor';
 import PropertiesField from './components/PropertiesField';
 import VariableTracker from './components/VariableTracker';
 import PlusCalPage from './components/PlusCalPage';
+import TranslatorTest from './components/TranslatorTest';
 
 // Create a separate component for the main content to handle navigation
 const MainContent: React.FC = () => {
@@ -105,6 +106,9 @@ function App() {
             
             <Route path="/pluscal" element={
               <PlusCalPage />
+            } />
+            <Route path="/translator-test" element={
+              <TranslatorTest />
             } />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

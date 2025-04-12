@@ -1,86 +1,166 @@
-import React from 'react';
-import { Paper, Typography, Button, Box } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Button, Typography, CircularProgress, Alert, Snackbar } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import Editor from '@monaco-editor/react';
+import { TLATranslator } from '../utils/tlaTranslator';
 
 import 'react-toastify/dist/ReactToastify.css';
 
-const samplePlusCal = `--algorithm sample
-begin
-  process p1 = 1
-  begin
-    with lock \in {FREE, HELD} do
-      if lock = FREE then
-        lock := HELD;
-        print "Process 1 acquired lock";
-        lock := FREE;
-      end if;
-    end with;
-  end process;
+const defaultPlusCal = `(* --algorithm sample
+variables lock = "FREE";
 
-  process p2 = 2
-  begin
-    with lock \in {FREE, HELD} do
-      if lock = FREE then
-        lock := HELD;
-        print "Process 2 acquired lock";
-        lock := FREE;
+process p1 = 1
+begin
+  A1: if lock = "FREE" then
+        lock := "HELD";
+        print "Process 1 acquired lock";
       end if;
-    end with;
-  end process;
-end algorithm`;
+  A2: lock := "FREE";
+end process;
+
+process p2 = 2
+begin
+  B1: if lock = "FREE" then
+        lock := "HELD";
+        print "Process 2 acquired lock";
+      end if;
+  B2: lock := "FREE";
+end process;
+end algorithm; *)`;
 
 const PlusCalPage: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const plusCalCode = location.state?.plusCalCode || samplePlusCal;
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [plusCalCode, setPlusCalCode] = useState(location.state?.plusCalCode || defaultPlusCal);
+    const [tlaCode, setTlaCode] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [showError, setShowError] = useState(false);
 
-  const handleTranslateToTLA = () => {
-    toast.info('TODO: Implement TLA+ translation');
-  };
+    const handleTranslate = async () => {
+        setIsLoading(true);
+        setError(null);
+        setShowError(false);
+        try {
+            const translator = TLATranslator.getInstance();
+            const translatedCode = await translator.translateToTLA(plusCalCode);
+            setTlaCode(translatedCode);
+            toast.success('Translation successful');
+        } catch (err: any) {
+            setError(err.message);
+            setShowError(true);
+            setTlaCode('');
+            toast.error('Translation failed');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-  const handleVerifyWithPGo = () => {
-    toast.info('TODO: Implement PGo verification');
-  };
+    const handleCloseError = () => {
+        setShowError(false);
+    };
 
-  return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h5" gutterBottom>
-        PlusCal Specification
-      </Typography>
+    const handleVerifyWithPGo = () => {
+        toast.info('TODO: Implement PGo verification');
+    };
 
-      <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
-        <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
-          {plusCalCode}
-        </pre>
-      </Paper>
+    return (
+        <Box sx={{ p: 3, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <Typography variant="h4" gutterBottom>
+                PlusCal to TLA+ Translator
+            </Typography>
+            
+            {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {error}
+                </Alert>
+            )}
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleTranslateToTLA}
-        >
-          Translate to TLA+
-        </Button>
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={handleVerifyWithPGo}
-        >
-          Verify with PGo
-        </Button>
-      </Box>
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                <Button 
+                    variant="contained" 
+                    onClick={handleTranslate}
+                    disabled={isLoading}
+                >
+                    {isLoading ? <CircularProgress size={24} /> : 'Translate to TLA+'}
+                </Button>
+                <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={handleVerifyWithPGo}
+                    disabled={isLoading}
+                >
+                    Verify with PGo
+                </Button>
+            </Box>
 
-      <Button
-        variant="outlined"
-        onClick={() => navigate(-1)}
-        sx={{ mt: 2 }}
-      >
-        Back to Go Code
-      </Button>
-    </Box>
-  );
+            <Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 0 }}>
+                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Typography variant="h6" gutterBottom>
+                        PlusCal Code
+                    </Typography>
+                    <Box sx={{ flex: 1, border: '1px solid #ccc' }}>
+                        <Editor
+                            defaultLanguage="plaintext"
+                            value={plusCalCode}
+                            onChange={(value) => setPlusCalCode(value || '')}
+                            options={{
+                                minimap: { enabled: false },
+                                fontSize: 14,
+                                lineNumbers: 'on',
+                                scrollBeyondLastLine: false,
+                                automaticLayout: true,
+                            }}
+                        />
+                    </Box>
+                </Box>
+
+                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Typography variant="h6" gutterBottom>
+                        TLA+ Code
+                    </Typography>
+                    <Box sx={{ flex: 1, border: '1px solid #ccc' }}>
+                        <Editor
+                            defaultLanguage="plaintext"
+                            value={tlaCode}
+                            options={{
+                                minimap: { enabled: false },
+                                fontSize: 14,
+                                lineNumbers: 'on',
+                                readOnly: true,
+                                scrollBeyondLastLine: false,
+                                automaticLayout: true,
+                            }}
+                        />
+                    </Box>
+                </Box>
+            </Box>
+            <Button
+                variant="outlined"
+                onClick={() => navigate(-1)}
+                sx={{ mt: 2 }}
+            >
+                Back to Go Code
+            </Button>
+
+            <Snackbar 
+                open={showError} 
+                autoHideDuration={6000} 
+                onClose={handleCloseError}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert 
+                    onClose={handleCloseError} 
+                    severity="error" 
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    {error ? `Translation Error: ${error}` : 'An error occurred during translation'}
+                </Alert>
+            </Snackbar>
+        </Box>
+    );
 };
 
 export default PlusCalPage;
