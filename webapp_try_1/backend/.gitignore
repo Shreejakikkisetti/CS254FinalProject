@@ -1,0 +1,14 @@
+# Build and temporary directories
+.bsp/
+.scala-build/
+examples/
+temp/
+tools/pgo/
+
+# Go modules
+go.mod
+go.sum
+
+# Test files
+test_code.tla
+test_pgo.js

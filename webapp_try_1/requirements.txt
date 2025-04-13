@@ -9,7 +9,17 @@ react-toastify>=9.1.0
 @monaco-editor/react>=4.5.0
 
 # Backend dependencies
-# Go dependencies will be managed via go.mod
+express>=4.18.0
+cors>=2.8.5
+body-parser>=1.20.0
+
+# Go dependencies (managed via go.mod)
+go>=1.16.0
+
+# PGo dependencies
+scala-cli>=1.0.0
+java>=11.0.0
+
 # Python dependencies for Codeium integration
 codeium>=0.1.0
 

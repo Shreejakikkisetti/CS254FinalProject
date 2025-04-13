@@ -4,66 +4,60 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
 
-const PGO_DIR = path.join(__dirname, 'tools', 'pgo');
-const TEMP_DIR = path.join(__dirname, 'temp');
+const EXAMPLES_DIR = path.join(__dirname, 'examples');
 
-async function ensureTempDir() {
+async function verifyWithPGo(tlaContent) {
     try {
-        await fs.mkdir(TEMP_DIR, { recursive: true });
-    } catch (err) {
-        if (err.code !== 'EEXIST') {
-            throw err;
-        }
-    }
-}
+        console.log('Starting PGo verification...');
+        
+        // Create a unique filename for this conversion
+        const timestamp = Date.now();
+        const specFile = path.join(EXAMPLES_DIR, `spec_${timestamp}.tla`);
+        const outFile = path.join(EXAMPLES_DIR, `spec_${timestamp}.go`);
 
-async function cleanupTempFiles(baseName) {
-    const extensions = ['.tla', '.go'];
-    for (const ext of extensions) {
-        try {
-            await fs.unlink(baseName + ext).catch(() => {});
-        } catch (err) {
-            console.error(`Error cleaning up ${baseName}${ext}:`, err);
-        }
-    }
-}
+        console.log('Using files:', { specFile, outFile });
 
-async function verifyWithPGo(plusCalCode) {
-    const tempBaseName = path.join(TEMP_DIR, `pgo_temp_${Date.now()}`);
-    
-    try {
-        await ensureTempDir();
+        // Write the TLA+ specification file
+        console.log('Writing TLA+ specification file...');
+        await fs.writeFile(specFile, tlaContent, 'utf8');
 
-        // Create a temporary TLA+ file with the PlusCal code
-        const tlaFile = tempBaseName + '.tla';
-        const moduleContent = `---- MODULE Temp ----
-EXTENDS Integers, Sequences
-(*
---algorithm Test
-${plusCalCode}
-*)
-====`;
-
-        await fs.writeFile(tlaFile, moduleContent, 'utf8');
-
-        // Run PGo to generate Go code
-        const { stdout, stderr } = await execAsync(`java -jar "${path.join(PGO_DIR, 'pgo.jar')}" -m "${tlaFile}"`);
-
+        // Run scala-cli to generate Go code
+        console.log('Running PGo command...');
+        const command = `scala-cli run . -- gogen --spec-file "${specFile}" --out-file "${outFile}"`;
+        
+        const { stdout, stderr } = await execAsync(command, { cwd: __dirname });
         if (stderr) {
-            throw new Error(`PGo error: ${stderr}`);
+            console.error('PGo stderr:', stderr);
         }
 
         // Read the generated Go file
-        const goFile = tempBaseName + '.go';
-        const goCode = await fs.readFile(goFile, 'utf8');
+        let goCode;
+        try {
+            console.log('Reading generated Go file...');
+            goCode = await fs.readFile(outFile, 'utf8');
+
+            // Format the Go code
+            try {
+                await execAsync('go fmt ' + outFile, { cwd: __dirname });
+                goCode = await fs.readFile(outFile, 'utf8');
+            } catch (err) {
+                console.warn('Failed to format Go code:', err);
+            }
+        } catch (err) {
+            console.error('Failed to read Go file:', err);
+            throw new Error(`PGo failed to generate Go code: ${stderr}`);
+        }
+
+        // Clean up the files
+        await Promise.all([
+            fs.unlink(specFile).catch((err) => console.error('Failed to delete spec file:', err)),
+            fs.unlink(outFile).catch((err) => console.error('Failed to delete output file:', err))
+        ]);
 
         return goCode;
     } catch (error) {
         console.error('PGo verification error:', error);
         throw error;
-    } finally {
-        // Clean up temporary files
-        await cleanupTempFiles(tempBaseName);
     }
 }
 

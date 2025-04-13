@@ -14,6 +14,16 @@ const port = process.env.PORT || 3002;
 app.use(cors());
 app.use(bodyParser.json());
 
+app.get('/api/test-code', async (req, res) => {
+    try {
+        const testCode = await fs.readFile(path.join(__dirname, 'test_code.tla'), 'utf8');
+        res.json({ testCode });
+    } catch (error) {
+        console.error('Error reading test code:', error);
+        res.status(500).json({ error: 'Failed to read test code' });
+    }
+});
+
 function isModuleWrapped(code) {
   return code.trim().startsWith('----') && code.includes('MODULE') && code.endsWith('====');
 }
@@ -111,17 +121,25 @@ app.post('/api/verify', (req, res) => {
 });
 
 app.post('/api/verify-pgo', async (req, res) => {
+  console.log('Received request for verify-pgo');
+  console.log('Request body:', JSON.stringify(req.body, null, 2));
+  console.log('PlusCal code:', req.body.plusCalCode);
+
   const { plusCalCode } = req.body;
   
   if (!plusCalCode) {
+    console.log('No PlusCal code provided');
     return res.status(400).json({ error: 'No PlusCal code provided' });
   }
 
   try {
+    console.log('Calling verifyWithPGo...');
     const goCode = await verifyWithPGo(plusCalCode);
+    console.log('Generated Go code:', goCode);
     res.json({ goCode });
   } catch (error) {
-    console.error('PGo verification failed:', error);
+    console.error('Error in verify-pgo endpoint:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ error: error.message });
   }
 });

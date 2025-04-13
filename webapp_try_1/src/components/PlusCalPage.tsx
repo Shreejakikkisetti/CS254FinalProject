@@ -8,27 +8,23 @@ import { TLATranslator } from '../utils/tlaTranslator';
 
 import 'react-toastify/dist/ReactToastify.css';
 
-const defaultPlusCal = `(* --algorithm sample
-variables lock = "FREE";
+const defaultPlusCal = `variables lock = "FREE";
 
-process p1 = 1
-begin
+process (P1 = 1) {
   A1: if lock = "FREE" then
         lock := "HELD";
         print "Process 1 acquired lock";
       end if;
   A2: lock := "FREE";
-end process;
+}
 
-process p2 = 2
-begin
+process (P2 = 2) {
   B1: if lock = "FREE" then
         lock := "HELD";
         print "Process 2 acquired lock";
       end if;
   B2: lock := "FREE";
-end process;
-end algorithm; *)`;
+}`;
 
 const PlusCalPage: React.FC = () => {
     const navigate = useNavigate();
@@ -63,6 +59,25 @@ const PlusCalPage: React.FC = () => {
 
     const handleCloseError = () => {
         setShowError(false);
+    };
+
+    const handleLoadTestCode = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('http://localhost:3002/api/test-code');
+            if (!response.ok) {
+                throw new Error('Failed to fetch test code');
+            }
+            const data = await response.json();
+            setPlusCalCode(data.testCode);
+            toast.success('Test code loaded successfully');
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to load test code');
+            setError(err.message);
+            setShowError(true);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleVerifyWithPGo = async () => {
@@ -123,6 +138,14 @@ const PlusCalPage: React.FC = () => {
                     disabled={isLoading}
                 >
                     Verify with PGo
+                </Button>
+                <Button
+                    variant="contained"
+                    color="info"
+                    onClick={handleLoadTestCode}
+                    disabled={isLoading}
+                >
+                    Test PGo
                 </Button>
             </Box>
 
