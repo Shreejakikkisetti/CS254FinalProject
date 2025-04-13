@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { exec } = require('child_process');
+const { verifyWithPGo } = require('./pgoHandler');
 const fs = require('fs').promises;
 const path = require('path');
 const { promisify } = require('util');
@@ -109,35 +110,20 @@ app.post('/api/verify', (req, res) => {
   res.json({ message: 'Verification endpoint' });
 });
 
-// Mock endpoint for PGo verification
-app.post('/api/verify-pgo', (req, res) => {
+app.post('/api/verify-pgo', async (req, res) => {
   const { plusCalCode } = req.body;
   
-  // For testing, return a mock Go code that's slightly different from what we'd expect
-  const mockGoCode = `package main
+  if (!plusCalCode) {
+    return res.status(400).json({ error: 'No PlusCal code provided' });
+  }
 
-import (
-    "fmt"
-    "sync"
-)
-
-func main() {
-    var lock sync.Mutex
-    
-    go func() {
-        lock.Lock()
-        fmt.Println("Process 1 acquired lock")
-        lock.Unlock()
-    }()
-    
-    go func() {
-        lock.Lock()
-        fmt.Println("Process 2 acquired lock")
-        lock.Unlock()
-    }()
-}`;
-
-  res.json({ goCode: mockGoCode });
+  try {
+    const goCode = await verifyWithPGo(plusCalCode);
+    res.json({ goCode });
+  } catch (error) {
+    console.error('PGo verification failed:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.listen(port, () => {
