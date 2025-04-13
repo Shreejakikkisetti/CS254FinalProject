@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Box, Button, Typography, CircularProgress, Alert, Snackbar } from '@mui/material';
+import GoCodeCompareModal from './GoCodeCompareModal';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Editor from '@monaco-editor/react';
@@ -37,6 +38,9 @@ const PlusCalPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showError, setShowError] = useState(false);
+    const [originalGoCode, setOriginalGoCode] = useState(location.state?.originalGoCode || '');
+    const [showCompareModal, setShowCompareModal] = useState(false);
+    const [generatedGoCode, setGeneratedGoCode] = useState('');
 
     const handleTranslate = async () => {
         setIsLoading(true);
@@ -61,8 +65,35 @@ const PlusCalPage: React.FC = () => {
         setShowError(false);
     };
 
-    const handleVerifyWithPGo = () => {
-        toast.info('TODO: Implement PGo verification');
+    const handleVerifyWithPGo = async () => {
+        setIsLoading(true);
+        try {
+            // TODO: Make API call to backend to run PGo
+            // For now, just show a placeholder comparison
+            const response = await fetch('http://localhost:3002/api/verify-pgo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    plusCalCode
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to verify with PGo');
+            }
+
+            const data = await response.json();
+            setGeneratedGoCode(data.goCode);
+            setShowCompareModal(true);
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to verify with PGo');
+            setError(err.message);
+            setShowError(true);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -159,6 +190,13 @@ const PlusCalPage: React.FC = () => {
                     {error ? `Translation Error: ${error}` : 'An error occurred during translation'}
                 </Alert>
             </Snackbar>
+
+            <GoCodeCompareModal
+                open={showCompareModal}
+                onClose={() => setShowCompareModal(false)}
+                originalCode={originalGoCode}
+                generatedCode={generatedGoCode}
+            />
         </Box>
     );
 };

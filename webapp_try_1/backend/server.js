@@ -109,6 +109,37 @@ app.post('/api/verify', (req, res) => {
   res.json({ message: 'Verification endpoint' });
 });
 
+// Mock endpoint for PGo verification
+app.post('/api/verify-pgo', (req, res) => {
+  const { plusCalCode } = req.body;
+  
+  // For testing, return a mock Go code that's slightly different from what we'd expect
+  const mockGoCode = `package main
+
+import (
+    "fmt"
+    "sync"
+)
+
+func main() {
+    var lock sync.Mutex
+    
+    go func() {
+        lock.Lock()
+        fmt.Println("Process 1 acquired lock")
+        lock.Unlock()
+    }()
+    
+    go func() {
+        lock.Lock()
+        fmt.Println("Process 2 acquired lock")
+        lock.Unlock()
+    }()
+}`;
+
+  res.json({ goCode: mockGoCode });
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

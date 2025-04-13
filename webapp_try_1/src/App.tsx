@@ -35,8 +35,13 @@ BEGIN
 END`;
       
       setPlusCalResult(plusCal);
-      // Navigate to PlusCal page with state
-      navigate('/pluscal', { state: { plusCalCode: plusCal } });
+      // Navigate to PlusCal page with state, including both PlusCal and original Go code
+      navigate('/pluscal', { 
+        state: { 
+          plusCalCode: plusCal,
+          originalGoCode: code  // Pass the original Go code
+        } 
+      });
     } catch (error) {
       console.error('Conversion failed:', error);
       setPlusCalResult('Conversion failed. Please check your input and try again.');
