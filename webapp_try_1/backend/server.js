@@ -113,22 +113,29 @@ ${code}
 
 app.post('/api/analyze', async (req, res) => {
   try {
-    const { code, trackedVariables } = req.body;
+    const { code, trackedVariables, safetyProperties, livenessProperties } = req.body;
     
-    if (!code) {
-      return res.status(400).json({ error: 'No Go code provided' });
-    }
-    if (!trackedVariables || !Array.isArray(trackedVariables)) {
-      return res.status(400).json({ error: 'No tracked variables provided or invalid format' });
-    }
-
-    // Run dependency analysis
-    const result = await analyzeDependencies(code, trackedVariables);
+    // Analyze dependencies
+    const condensedCode = await analyzeDependencies(code, trackedVariables);
     
-    // For now, just return the condensed code in the PlusCal box
-    res.json({ plusCalCode: result.condensedCode });
+    // Import the PlusCalGenerator class
+    const { PlusCalGenerator } = require('./plusCalGenerator');
+    
+    // Create a new instance of the PlusCalGenerator
+    const generator = new PlusCalGenerator();
+    
+    // Generate PlusCal code using the JavaScript implementation
+    const plusCalCode = await generator.generatePlusCal({
+      goCode: condensedCode,
+      trackedVariables,
+      safetyProperties,
+      livenessProperties
+    });
+    
+    // Return the generated PlusCal code
+    res.json({ plusCalCode });
   } catch (error) {
-    console.error('Analysis error:', error);
+    console.error('Error in analyze endpoint:', error);
     res.status(500).json({ error: error.message });
   }
 });

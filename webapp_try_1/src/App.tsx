@@ -25,9 +25,18 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3002';
 // Create a separate component for the main content to handle navigation
 const MainContent: React.FC = () => {
   const navigate = useNavigate();
-  const [code, setCode] = useState<string>('');
-  const [properties, setProperties] = useState<string>('');
-  const [variables, setVariables] = useState<string>('');
+  const [code, setCode] = useState<string>(`package main
+
+func main() {
+    temp := 100
+    target := 70
+    
+    if temp > target {
+        temp = target
+    }
+}`);
+  const [properties, setProperties] = useState<string>('safety:temp <= target');
+  const [variables, setVariables] = useState<string>('temp,target');
   const [plusCalResult, setPlusCalResult] = useState<string>('');
   const [isConverting, setIsConverting] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -40,6 +49,19 @@ const MainContent: React.FC = () => {
       // Parse tracked variables
       const parsedVariables = variables.split(',').map(v => v.trim()).filter(v => v);
       
+      // Parse properties into safety and liveness
+      const safetyProps: string[] = [];
+      const livenessProps: string[] = [];
+      
+      properties.split(',').forEach(prop => {
+        const trimmed = prop.trim();
+        if (trimmed.startsWith('safety:')) {
+          safetyProps.push(trimmed.replace('safety:', '').trim());
+        } else if (trimmed.startsWith('liveness:')) {
+          livenessProps.push(trimmed.replace('liveness:', '').trim());
+        }
+      });
+      
       // Call the analyze endpoint
       const response = await fetch(`${API_BASE_URL}/api/analyze`, {
         method: 'POST',
@@ -48,7 +70,9 @@ const MainContent: React.FC = () => {
         },
         body: JSON.stringify({
           code,
-          trackedVariables: parsedVariables
+          trackedVariables: parsedVariables,
+          safetyProperties: safetyProps,
+          livenessProperties: livenessProps
         })
       });
 
