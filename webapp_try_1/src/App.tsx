@@ -10,6 +10,18 @@ import VariableTracker from './components/VariableTracker';
 import PlusCalPage from './components/PlusCalPage';
 import TranslatorTest from './components/TranslatorTest';
 
+interface PropertiesFieldProps {
+  properties: string;
+  onChange: (value: string) => void;
+}
+
+interface VariableTrackerProps {
+  variables: string;
+  onChange: (value: string) => void;
+}
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3002';
+
 // Create a separate component for the main content to handle navigation
 const MainContent: React.FC = () => {
   const navigate = useNavigate();
@@ -18,33 +30,46 @@ const MainContent: React.FC = () => {
   const [variables, setVariables] = useState<string>('');
   const [plusCalResult, setPlusCalResult] = useState<string>('');
   const [isConverting, setIsConverting] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
   const handleConvert = async () => {
     setIsConverting(true);
+    setError('');
+    
     try {
-      // Show TODO popup
-      toast.info('TODO: Implement LLM conversion');
+      // Parse tracked variables
+      const parsedVariables = variables.split(',').map(v => v.trim()).filter(v => v);
       
-      // Generate placeholder PlusCal
-      const plusCal = `(* This is a placeholder PlusCal result *)
-\* Converted from Go code with properties: ${properties}
-\* Tracked variables: ${variables}
+      // Call the analyze endpoint
+      const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          trackedVariables: parsedVariables
+        })
+      });
 
-BEGIN
-  (* Your PlusCal specification will go here *)
-END`;
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Analysis failed');
+      }
+
+      const result = await response.json();
+      const plusCal = result.plusCalCode;
       
       setPlusCalResult(plusCal);
-      // Navigate to PlusCal page with state, including both PlusCal and original Go code
       navigate('/pluscal', { 
         state: { 
           plusCalCode: plusCal,
-          originalGoCode: code  // Pass the original Go code
+          originalGoCode: code
         } 
       });
     } catch (error) {
       console.error('Conversion failed:', error);
-      setPlusCalResult('Conversion failed. Please check your input and try again.');
+      setError(error instanceof Error ? error.message : 'Conversion failed');
     } finally {
       setIsConverting(false);
     }
@@ -68,25 +93,37 @@ END`;
         </Typography>
         <PropertiesField
           properties={properties}
-          onChange={setProperties}
+          onChange={(value: string) => setProperties(value)}
         />
+        <Typography variant="caption" color="textSecondary" sx={{ mt: 1 }}>
+          Format: safety:property_name or liveness:property_name
+        </Typography>
       </Paper>
 
       <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom>
-          Variable Tracking
+          Tracked Variables
         </Typography>
         <VariableTracker
           variables={variables}
-          onChange={setVariables}
+          onChange={(value: string) => setVariables(value)}
         />
+        <Typography variant="caption" color="textSecondary" sx={{ mt: 1 }}>
+          Comma-separated list of variables to track
+        </Typography>
       </Paper>
+
+      {error && (
+        <Typography color="error" sx={{ mb: 2 }}>
+          {error}
+        </Typography>
+      )}
 
       <Button
         variant="contained"
         color="primary"
         onClick={handleConvert}
-        disabled={isConverting || !code}
+        disabled={isConverting || !code || !variables}
         sx={{ mt: 2 }}
       >
         {isConverting ? 'Converting...' : 'Convert to PlusCal'}

@@ -3,6 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { exec } = require('child_process');
 const { verifyWithPGo } = require('./pgoHandler');
+const { analyzeDependencies } = require('./dependencyAnalyzerWrapper');
 const fs = require('fs').promises;
 const path = require('path');
 const { promisify } = require('util');
@@ -110,9 +111,26 @@ ${code}
   }
 })();
 
-app.post('/api/analyze', (req, res) => {
-  const { code } = req.body;
-  res.json({ message: 'Code analysis endpoint' });
+app.post('/api/analyze', async (req, res) => {
+  try {
+    const { code, trackedVariables } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ error: 'No Go code provided' });
+    }
+    if (!trackedVariables || !Array.isArray(trackedVariables)) {
+      return res.status(400).json({ error: 'No tracked variables provided or invalid format' });
+    }
+
+    // Run dependency analysis
+    const result = await analyzeDependencies(code, trackedVariables);
+    
+    // For now, just return the condensed code in the PlusCal box
+    res.json({ plusCalCode: result.condensedCode });
+  } catch (error) {
+    console.error('Analysis error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.post('/api/verify', (req, res) => {
