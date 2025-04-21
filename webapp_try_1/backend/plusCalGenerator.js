@@ -1,4 +1,4 @@
-const { pipeline } = require('@xenova/transformers');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 require('dotenv').config();
 
 class PlusCalGenerator {
@@ -7,16 +7,8 @@ class PlusCalGenerator {
   }
 
   async initializeGenerator() {
-    if (!this.generator) {
-      try {
-        this.generator = await pipeline('text-generation', 'meta-llama/Llama-3.2-1B', {
-          token: process.env.HUGGING_FACE_TOKEN
-        });
-      } catch (error) {
-        console.error('Failed to initialize LLM:', error);
-        throw error;
-      }
-    }
+    // No initialization needed for fetch-based calls
+    return;
   }
 
   async generatePlusCal(options) {
@@ -30,13 +22,28 @@ class PlusCalGenerator {
         options.livenessProperties
       );
 
-      const result = await this.generator(prompt, {
-        max_new_tokens: 1000,
-        temperature: 0.7,
-        return_full_text: false,
+      const response = await fetch('https://go.apis.huit.harvard.edu/ais-openai-direct-limited-schools/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': process.env.OPENAI_API_KEY,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4.1-mini-2025-04-14',
+          messages: [
+            { role: 'system', content: 'You are an expert in converting Go code to PlusCal for formal verification.' },
+            { role: 'user', content: prompt },
+          ],
+          max_tokens: 1000,
+          temperature: 0.7,
+        }),
       });
-
-      return result[0].generated_text.trim();
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Harvard OpenAI proxy error: ${response.status} ${errorText}`);
+      }
+      const data = await response.json();
+      return data.choices[0].message.content.trim();
     } catch (error) {
       console.error('Error generating PlusCal:', error);
       throw error;
