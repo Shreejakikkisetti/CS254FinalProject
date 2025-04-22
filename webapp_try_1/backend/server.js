@@ -26,7 +26,7 @@ app.get('/api/test-code', async (req, res) => {
 });
 
 function isModuleWrapped(code) {
-  return code.trim().startsWith('----') && code.includes('MODULE') && code.endsWith('====');
+  return code.trim().startsWith('----') && code.includes('MODULE') && code.includes('====');
 }
 
 async function cleanupTempFiles(baseName) {
@@ -48,29 +48,75 @@ app.post('/api/translate', async (req, res) => {
       return res.status(400).json({ error: 'No PlusCal code provided' });
     }
 
-    // Create a temporary .tla file
+    // Helper to clean up the algorithm code
+    const cleanAlgorithm = (code) => {
+      // Remove any module header if present
+      let cleanCode = code;
+      if (code.includes('---- MODULE')) {
+        const startIndex = code.indexOf('variables');
+        if (startIndex !== -1) {
+          cleanCode = code.substring(startIndex);
+        }
+      }
+
+      // Remove trailing =====... if present
+      if (cleanCode.includes('====')) {
+        cleanCode = cleanCode.substring(0, cleanCode.indexOf('===='));
+      }
+
+      // Remove trailing --*) or *) if present
+      cleanCode = cleanCode.replace(/--\*\)\s*$/, '').replace(/\*\)\s*$/, '');
+
+      // Clean up the code
+      cleanCode = cleanCode.trim();
+
+      // Fix double -- before algorithm if present
+      cleanCode = cleanCode.replace(/--(\s*algorithm)/, '$1');
+
+      // Remove any trailing labels with skip
+      cleanCode = cleanCode.replace(/\s+[A-Za-z0-9_]+\s*:\s*skip\s*;?\s*end algorithm/, '\nend algorithm');
+
+      // Make sure it ends with end algorithm;
+      if (!cleanCode.endsWith('end algorithm;')) {
+        cleanCode = cleanCode.replace(/end algorithm\s*$/, 'end algorithm;');
+      }
+
+      return cleanCode;
+    };
+
+    // Create temporary file path
     const tempFile = tempBaseName + '.tla';
-    
-    // If code is already wrapped in a module, use it as is
-    const moduleContent = isModuleWrapped(code) ? code : `---- MODULE Temp ----
-EXTENDS Integers
+
+    // Clean and wrap the algorithm
+    const cleanedAlgorithm = cleanAlgorithm(code);
+    const moduleContent = `---- MODULE Temp ----
+EXTENDS Naturals, TLC
+
 (*
---algorithm Test
-${code}
+--algorithm TempAlgorithm
+${cleanedAlgorithm}
 *)
-====`;
 
-    // Write PlusCal code to temp file
+=============================================================================`;
+
     await fs.writeFile(tempFile, moduleContent, 'utf8');
+    console.log('File contents before translation:', await fs.readFile(tempFile, 'utf8'));
 
-    // Run the PlusCal translator
+    // Run the PlusCal translator with -nocfg flag
     const { stdout, stderr } = await execAsync(
-      `java -cp "${path.join(__dirname, 'tools', 'tla2tools.jar')}" pcal.trans ${tempFile}`
-    );
+      `java -cp "${path.join(__dirname, 'tools', 'tla2tools.jar')}" pcal.trans -nocfg ${tempFile}`,
+      { encoding: 'utf8' }
+    ).catch(error => {
+      console.error('Translation command error:', error.message);
+      throw new Error(`Translation error: ${error.message}`);
+    });
 
     if (stderr) {
-      throw new Error(stderr);
+      console.error('Translation stderr:', stderr);
+      throw new Error(`Translation error: ${stderr}`);
     }
+
+    console.log('Translation output:', stdout || 'No stdout');
 
     // Read the translated file
     const translatedContent = await fs.readFile(tempFile, 'utf8');
