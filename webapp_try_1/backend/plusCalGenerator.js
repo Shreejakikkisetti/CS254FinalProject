@@ -73,10 +73,21 @@ class PlusCalGenerator {
     5. Includes proper assertions and invariants
     
     Format the output as a complete PlusCal specification, including:
-    - Variable declarations
-    - Algorithm structure
-    - Assertions and invariants
-    - Proper indentation and formatting
+    - START with variable names
+    - Include algorithm structure
+    - Add assertions and invariants
+    - END with 'end algorithm; *)'
+    - Use proper indentation and formatting
+
+    EXAMPLE FORMAT:
+    variables temp = 100;
+
+    begin
+      w1: while temp > 70 do
+        c1: temp := temp - 5;
+      end while;
+      assert temp <= 70;
+    end algorithm; *)
     `;
   }
 }
