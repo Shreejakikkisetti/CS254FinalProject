@@ -1,0 +1,17 @@
+(*--algorithm CounterAlgorithm
+(* 
+  Liveness Property: 
+  This algorithm demonstrates a liveness property where 
+  the counter will eventually reach the value 3.
+*)
+variables counter = 0;
+
+begin
+  (* Loop to demonstrate liveness *)
+  while (counter < 4) do
+    counter := (counter + 1) % 4;
+  end while;
+  
+  (* Assert that the liveness property is satisfied *)
+  assert counter = 3;
+end algorithm; *)
