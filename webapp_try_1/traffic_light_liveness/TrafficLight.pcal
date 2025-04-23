@@ -1,0 +1,24 @@
+---- MODULE TrafficLight ----
+EXTENDS Naturals, TLC
+
+VARIABLES state
+
+(*--algorithm TrafficLightControl
+variables 
+    state = "Red";
+    
+define
+    (* Liveness property: Eventually state = "Green" *)
+    LivenessProperty == <>(state = "Green")
+end define;
+
+begin
+  main:
+    while TRUE do
+      if state = "Red" then
+        state := "Yellow";
+      elsif state = "Yellow" then
+        state := "Red";
+      end if;
+    end while;
+end algorithm; *)

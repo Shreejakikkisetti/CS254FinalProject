@@ -1,0 +1,25 @@
+---- MODULE TrafficLight ----
+EXTENDS Naturals, TLC
+
+(*--algorithm TrafficLightAlgorithm
+variables state = "Red";
+
+begin
+  main:
+    while TRUE do
+      if state = "Red" then
+        state := "Green"
+      elsif state = "Green" then
+        state := "Yellow"
+      elsif state = "Yellow" then
+        state := "Red"
+      end if;
+      
+      assert state \in {"Red", "Yellow", "Green"};
+    end while;
+end algorithm; *)
+
+\* Invariant: state is always one of the valid states
+Invariant == state \in {"Red", "Yellow", "Green"}
+
+====
