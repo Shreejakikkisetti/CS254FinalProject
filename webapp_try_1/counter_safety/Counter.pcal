@@ -1,0 +1,33 @@
+---- MODULE ValueCheck ----
+EXTENDS Naturals, TLC
+
+(*--algorithm ValueCheck {
+  variables value = 0;
+
+  define 
+    SafetyInvariant == 
+      value < 3  (* Safety property: value must always be less than 3 *)
+
+  {
+    loop:
+      while (TRUE) {
+        (* Simulate increment that will violate safety property *)
+        if (value < 10) {
+          value := value + 1;
+        } else {
+          value := 0;
+        };
+
+        (* Assert the safety invariant *)
+        assert SafetyInvariant;
+
+        (* Optional: break to demonstrate property *)
+        if (value = 4) {
+          break loop;
+        };
+      };
+  }
+}
+*)
+
+=============================================================================
