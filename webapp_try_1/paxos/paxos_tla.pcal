@@ -1,0 +1,113 @@
+---- MODULE paxos_tla ----
+EXTENDS Integers, Sequences, TLC
+
+CONSTANT Values
+
+ASSUME Values = {"v0", "v1", "v2", "v3", "none"}
+
+(* --algorithm PaxosSimple
+variables
+  proposeNum = 0,
+  proposeVal = "v0",
+  promiseSeq = 0,
+  acceptSeq = 0,
+  acceptVal = "none",
+  accepted = {};
+
+define
+  Safety == acceptSeq >= promiseSeq
+  
+  TypeOK ==
+    /\ proposeNum \in Nat
+    /\ proposeVal \in STRING
+    /\ promiseSeq \in Nat
+    /\ acceptSeq \in Nat
+    /\ acceptVal \in STRING
+    /\ accepted \subseteq [seq: Nat, val: STRING]
+    
+  Liveness == <>(\E v \in STRING : \E rec \in accepted : rec.val = v)
+end define;
+
+fair process Proposer = 0
+begin
+  Propose:
+    while TRUE do
+      proposeNum := proposeNum + 1;
+      proposeVal := "v" \o ToString(proposeNum);
+      
+      PreparePhase:
+        promiseSeq := proposeNum;
+        
+        (* In Paxos, we need to ensure acceptSeq >= promiseSeq before accepting *)
+        await acceptSeq < promiseSeq;
+      
+      ProposePhase:
+        acceptSeq := promiseSeq;  (* This ensures acceptSeq >= promiseSeq *)
+        acceptVal := proposeVal;
+        accepted := accepted \union {[seq |-> acceptSeq, val |-> acceptVal]};
+    end while;
+end process;
+
+end algorithm *)
+
+\* BEGIN TRANSLATION (chksum(pcal) = "a645e8c7" /\ chksum(tla) = "e00cc664")
+VARIABLES pc, proposeNum, proposeVal, promiseSeq, acceptSeq, acceptVal, 
+          accepted
+
+(* define statement *)
+Safety == acceptSeq >= promiseSeq
+
+TypeOK ==
+  /\ proposeNum \in Nat
+  /\ proposeVal \in Values
+  /\ promiseSeq \in Nat
+  /\ acceptSeq \in Nat
+  /\ acceptVal \in Values
+  /\ accepted \subseteq [seq: Nat, val: Values]
+  
+Liveness == <>(\E v \in Values : \E rec \in accepted : rec.val = v)
+
+StateConstraint == proposeNum <= 3
+
+vars == << pc, proposeNum, proposeVal, promiseSeq, acceptSeq, acceptVal, 
+           accepted >>
+
+ProcSet == {0}
+
+Init == (* Global variables *)
+        /\ proposeNum = 0
+        /\ proposeVal = "v0"
+        /\ promiseSeq = 0
+        /\ acceptSeq = 0
+        /\ acceptVal = "none"
+        /\ accepted = {}
+        /\ pc = [self \in ProcSet |-> "Propose"]
+
+Propose == /\ pc[0] = "Propose"
+           /\ proposeNum' = proposeNum + 1
+           /\ proposeVal' = "v" \o ToString(proposeNum')
+           /\ pc' = [pc EXCEPT ![0] = "PreparePhase"]
+           /\ UNCHANGED << promiseSeq, acceptSeq, acceptVal, accepted >>
+
+PreparePhase == /\ pc[0] = "PreparePhase"
+                /\ promiseSeq' = proposeNum
+                /\ pc' = [pc EXCEPT ![0] = "ProposePhase"]
+                /\ UNCHANGED << proposeNum, proposeVal, acceptSeq, acceptVal, 
+                                accepted >>
+
+ProposePhase == /\ pc[0] = "ProposePhase"
+                /\ acceptSeq' = proposeNum
+                /\ acceptVal' = proposeVal
+                /\ accepted' = (accepted \union {[seq |-> acceptSeq', val |-> acceptVal']})
+                /\ pc' = [pc EXCEPT ![0] = "Propose"]
+                /\ UNCHANGED << proposeNum, proposeVal, promiseSeq >>
+
+Proposer == Propose \/ PreparePhase \/ ProposePhase
+
+Next == Proposer
+
+Spec == /\ Init /\ [][Next]_vars
+        /\ WF_vars(Proposer)
+
+\* END TRANSLATION
+====
